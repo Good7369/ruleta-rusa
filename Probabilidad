@@ -1,0 +1,93 @@
+<!DOCTYPE html><html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Juego 1 en 1,000,000</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    color: #f1f5f9;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+  }.contenedor { width: 800px; margin: 40px auto; background: white; color: #0f172a; border-radius: 10px; padding: 20px; box-shadow: 0 6px 18px rgba(0,0,0,0.5); }
+
+/* Estilo para móvil */ @media (max-width: 600px) { .contenedor { width: 95%; background: lightblue; color: #000; } }
+
+h1 { font-size: 2rem; color: #2563eb; }
+
+p { color: #475569; }
+
+button { background-color: #2563eb; border: none; color: white; padding: 12px 24px; margin: 10px; border-radius: 8px; font-size: 1rem; cursor: pointer; transition: 0.3s; }
+
+button:hover { background-color: #1e40af; }
+
+input[type=number] { padding: 8px; width: 150px; border-radius: 8px; border: 1px solid #334155; background: #f1f5f9; color: #0f172a; }
+
+.result { margin-top: 30px; padding: 15px; background: #1e293b; border-radius: 10px; font-size: 1.2rem; color: #f1f5f9; }
+
+.win { color: #22c55e; font-weight: bold; }
+
+.lose { color: #ef4444; font-weight: bold; }
+
+.footer { margin-top: 40px; font-size: 0.9rem; color: #64748b; } </style>
+
+</head>
+<body>
+  <div class="contenedor">
+    <h1>🎲 Juego 1 en 1,000,000</h1>
+    <p>Probabilidad de ganar: <strong>1 / 1,000,000</strong>. ¿Te atreves a intentar la suerte?</p><div>
+  <input id="totalInput" type="number" value="1000000" min="1" step="1"> <br>
+  <button id="playBtn">🎯 Jugar</button>
+  <button id="autoBtn">🔁 Simular 100 veces</button>
+</div>
+
+<div class="result" id="resultArea">Presiona "Jugar" para comenzar.</div>
+
+<div class="footer">© 2025 - Juego 1 en 1,000,000 | Hecho con JavaScript puro</div>
+
+  </div>  <script>
+    const playBtn = document.getElementById('playBtn');
+    const autoBtn = document.getElementById('autoBtn');
+    const totalInput = document.getElementById('totalInput');
+    const resultArea = document.getElementById('resultArea');
+
+    const WIN_TARGET = 1;
+
+    function secureRandomInt(maxInclusive) {
+      if (window.crypto && crypto.getRandomValues) {
+        const array = new Uint32Array(1);
+        crypto.getRandomValues(array);
+        return (array[0] % maxInclusive) + 1;
+      }
+      return Math.floor(Math.random() * maxInclusive) + 1;
+    }
+
+    function playOnce(total) {
+      const n = secureRandomInt(total);
+      if (n === WIN_TARGET) {
+        resultArea.innerHTML = `<span class='win'>¡GANASTE! 🎉</span><br>Número: ${n}`;
+      } else {
+        resultArea.innerHTML = `<span class='lose'>Perdiste 😢</span><br>Número: ${n}`;
+      }
+    }
+
+    playBtn.addEventListener('click', () => {
+      const total = Math.max(1, Math.floor(Number(totalInput.value) || 1000000));
+      playOnce(total);
+    });
+
+    autoBtn.addEventListener('click', async () => {
+      const total = Math.max(1, Math.floor(Number(totalInput.value) || 1000000));
+      let wins = 0;
+      const runs = 100;
+      for (let i = 0; i < runs; i++) {
+        const n = secureRandomInt(total);
+        if (n === WIN_TARGET) wins++;
+        await new Promise(r => setTimeout(r, 1));
+      }
+      resultArea.innerHTML = `Simulación completa:<br><span class='win'>${wins} victorias</span> de ${runs} intentos.`;
+    });
+  </script></body>
+</html>
