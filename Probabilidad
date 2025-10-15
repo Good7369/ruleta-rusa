@@ -1,93 +1,62 @@
-<!DOCTYPE html><html lang="es">
+<!doctype html>
+
+<html lang="es">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Juego 1 en 1,000,000</title>
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    background: linear-gradient(135deg, #0f172a, #1e293b);
-    color: #f1f5f9;
-    text-align: center;
-    margin: 0;
-    padding: 0;
-  }.contenedor { width: 800px; margin: 40px auto; background: white; color: #0f172a; border-radius: 10px; padding: 20px; box-shadow: 0 6px 18px rgba(0,0,0,0.5); }
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Juego 1 en 1,000,000 — Versión HTML sola</title>
+  <style>
+    /* Reset y tipografía */
+    :root{--bg1:#0f172a;--card:#ffffff;--text:#0f172a}
+    html,body{height:100%;margin:0;font-family:Arial,Helvetica,sans-serif;background:linear-gradient(135deg,var(--bg1),#1e293b);color:#f1f5f9}.contenedor{width:800px;margin:40px auto;background:var(--card);color:var(--text);border-radius:10px;padding:24px;box-shadow:0 8px 30px rgba(2,6,23,.6);text-align:center}
 
-/* Estilo para móvil */ @media (max-width: 600px) { .contenedor { width: 95%; background: lightblue; color: #000; } }
+@media (max-width:600px){
+  .contenedor{width:95%;background:lightblue;color:#000}
+}
 
-h1 { font-size: 2rem; color: #2563eb; }
+h1{color:#2563eb;margin:0 0 8px}
+p.lead{color:#475569;margin:8px 0 20px}
 
-p { color: #475569; }
+.controls{display:flex;gap:8px;align-items:center;justify-content:center}
+input[type=number]{padding:8px;border-radius:8px;border:1px solid #cbd5e1;width:160px}
+.button{display:inline-block;padding:10px 18px;border-radius:8px;background:#2563eb;color:#fff;text-decoration:none;font-weight:600}
+.muted{color:#64748b;font-size:0.9rem;margin-top:18px}
 
-button { background-color: #2563eb; border: none; color: white; padding: 12px 24px; margin: 10px; border-radius: 8px; font-size: 1rem; cursor: pointer; transition: 0.3s; }
+/* Secciones "simuladas" visibles mediante anclas — NO aleatorio */
+.notice{margin-top:20px;padding:14px;border-radius:8px;background:#f8fafc;color:#0f172a}
+.win{color:#166534;font-weight:700}
+.lose{color:#991b1b;font-weight:700}
 
-button:hover { background-color: #1e40af; }
+footer{margin-top:28px;color:#94a3b8;font-size:0.9rem}
 
-input[type=number] { padding: 8px; width: 150px; border-radius: 8px; border: 1px solid #334155; background: #f1f5f9; color: #0f172a; }
-
-.result { margin-top: 30px; padding: 15px; background: #1e293b; border-radius: 10px; font-size: 1.2rem; color: #f1f5f9; }
-
-.win { color: #22c55e; font-weight: bold; }
-
-.lose { color: #ef4444; font-weight: bold; }
-
-.footer { margin-top: 40px; font-size: 0.9rem; color: #64748b; } </style>
-
+  </style>
 </head>
 <body>
   <div class="contenedor">
     <h1>🎲 Juego 1 en 1,000,000</h1>
-    <p>Probabilidad de ganar: <strong>1 / 1,000,000</strong>. ¿Te atreves a intentar la suerte?</p><div>
-  <input id="totalInput" type="number" value="1000000" min="1" step="1"> <br>
-  <button id="playBtn">🎯 Jugar</button>
-  <button id="autoBtn">🔁 Simular 100 veces</button>
+    <p class="lead">Versión **solo HTML** (sin JavaScript). Esta página muestra la interfaz del juego pero <strong>no puede generar números aleatorios</strong> sin JS o un servidor.</p><div class="controls">
+  <label>
+    Total: <br>
+    <input type="number" value="1000000" min="1" aria-label="Total">
+  </label>
+
+  <!-- Los enlaces siguientes NO son aleatorios: solo muestran secciones fijas -->
+  <a href="#lose" class="button">🎯 Jugar (simulado: perder)</a>
+  <a href="#win" class="button">🎉 Mostrar victoria (simulado)</a>
 </div>
 
-<div class="result" id="resultArea">Presiona "Jugar" para comenzar.</div>
+<div id="lose" class="notice">
+  <div class="lose">Perdiste 😢 — Resultado simulado: número distinto de 1.</div>
+  <div class="muted">Nota: Para que el resultado sea realmente aleatorio (1/1,000,000) se requiere JavaScript o lógica en servidor. Puedo añadirlo si quieres.</div>
+</div>
 
-<div class="footer">© 2025 - Juego 1 en 1,000,000 | Hecho con JavaScript puro</div>
+<div id="win" class="notice">
+  <div class="win">¡GANASTE! 🎉 — Resultado simulado: número 1.</div>
+  <div class="muted">Este contenido solo muestra cómo se vería la victoria. No es aleatorio en HTML puro.</div>
+</div>
 
-  </div>  <script>
-    const playBtn = document.getElementById('playBtn');
-    const autoBtn = document.getElementById('autoBtn');
-    const totalInput = document.getElementById('totalInput');
-    const resultArea = document.getElementById('resultArea');
+<footer>© 2025 - Juego 1 en 1,000,000 — Versión HTML sola</footer>
 
-    const WIN_TARGET = 1;
-
-    function secureRandomInt(maxInclusive) {
-      if (window.crypto && crypto.getRandomValues) {
-        const array = new Uint32Array(1);
-        crypto.getRandomValues(array);
-        return (array[0] % maxInclusive) + 1;
-      }
-      return Math.floor(Math.random() * maxInclusive) + 1;
-    }
-
-    function playOnce(total) {
-      const n = secureRandomInt(total);
-      if (n === WIN_TARGET) {
-        resultArea.innerHTML = `<span class='win'>¡GANASTE! 🎉</span><br>Número: ${n}`;
-      } else {
-        resultArea.innerHTML = `<span class='lose'>Perdiste 😢</span><br>Número: ${n}`;
-      }
-    }
-
-    playBtn.addEventListener('click', () => {
-      const total = Math.max(1, Math.floor(Number(totalInput.value) || 1000000));
-      playOnce(total);
-    });
-
-    autoBtn.addEventListener('click', async () => {
-      const total = Math.max(1, Math.floor(Number(totalInput.value) || 1000000));
-      let wins = 0;
-      const runs = 100;
-      for (let i = 0; i < runs; i++) {
-        const n = secureRandomInt(total);
-        if (n === WIN_TARGET) wins++;
-        await new Promise(r => setTimeout(r, 1));
-      }
-      resultArea.innerHTML = `Simulación completa:<br><span class='win'>${wins} victorias</span> de ${runs} intentos.`;
-    });
-  </script></body>
+  </div>
+</body>
 </html>
