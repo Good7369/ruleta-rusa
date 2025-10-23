@@ -1,62 +1,312 @@
-<!doctype html>
-
+<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Juego 1 en 1,000,000 — Versión HTML sola</title>
-  <style>
-    /* Reset y tipografía */
-    :root{--bg1:#0f172a;--card:#ffffff;--text:#0f172a}
-    html,body{height:100%;margin:0;font-family:Arial,Helvetica,sans-serif;background:linear-gradient(135deg,var(--bg1),#1e293b);color:#f1f5f9}.contenedor{width:800px;margin:40px auto;background:var(--card);color:var(--text);border-radius:10px;padding:24px;box-shadow:0 8px 30px rgba(2,6,23,.6);text-align:center}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calavera Peleadora</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-@media (max-width:600px){
-  .contenedor{width:95%;background:lightblue;color:#000}
-}
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
 
-h1{color:#2563eb;margin:0 0 8px}
-p.lead{color:#475569;margin:8px 0 20px}
+        canvas {
+            display: block;
+            cursor: crosshair;
+        }
 
-.controls{display:flex;gap:8px;align-items:center;justify-content:center}
-input[type=number]{padding:8px;border-radius:8px;border:1px solid #cbd5e1;width:160px}
-.button{display:inline-block;padding:10px 18px;border-radius:8px;background:#2563eb;color:#fff;text-decoration:none;font-weight:600}
-.muted{color:#64748b;font-size:0.9rem;margin-top:18px}
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #fff;
+            font-size: 18px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            z-index: 10;
+        }
 
-/* Secciones "simuladas" visibles mediante anclas — NO aleatorio */
-.notice{margin-top:20px;padding:14px;border-radius:8px;background:#f8fafc;color:#0f172a}
-.win{color:#166534;font-weight:700}
-.lose{color:#991b1b;font-weight:700}
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #fff;
+            font-size: 48px;
+            text-align: center;
+            display: none;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.9);
+        }
 
-footer{margin-top:28px;color:#94a3b8;font-size:0.9rem}
-
-  </style>
+        #gameOver button {
+            margin-top: 20px;
+            padding: 15px 30px;
+            font-size: 24px;
+            background: #fff;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+    </style>
 </head>
 <body>
-  <div class="contenedor">
-    <h1>🎲 Juego 1 en 1,000,000</h1>
-    <p class="lead">Versión **solo HTML** (sin JavaScript). Esta página muestra la interfaz del juego pero <strong>no puede generar números aleatorios</strong> sin JS o un servidor.</p><div class="controls">
-  <label>
-    Total: <br>
-    <input type="number" value="1000000" min="1" aria-label="Total">
-  </label>
+    <div id="ui">
+        <div>Tu Vida: <span id="playerHP">100</span></div>
+        <div>Vida Calavera: <span id="skullHP">150</span></div>
+        <div>Puntuación: <span id="score">0</span></div>
+    </div>
+    <div id="gameOver">
+        <div id="gameOverText"></div>
+        <button onclick="resetGame()">Jugar de Nuevo</button>
+    </div>
+    <canvas id="game"></canvas>
 
-  <!-- Los enlaces siguientes NO son aleatorios: solo muestran secciones fijas -->
-  <a href="#lose" class="button">🎯 Jugar (simulado: perder)</a>
-  <a href="#win" class="button">🎉 Mostrar victoria (simulado)</a>
-</div>
+    <script>
+        const canvas = document.getElementById('game');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
 
-<div id="lose" class="notice">
-  <div class="lose">Perdiste 😢 — Resultado simulado: número distinto de 1.</div>
-  <div class="muted">Nota: Para que el resultado sea realmente aleatorio (1/1,000,000) se requiere JavaScript o lógica en servidor. Puedo añadirlo si quieres.</div>
-</div>
+        let playerHP = 100;
+        let skullHP = 150;
+        let score = 0;
+        let gameActive = true;
 
-<div id="win" class="notice">
-  <div class="win">¡GANASTE! 🎉 — Resultado simulado: número 1.</div>
-  <div class="muted">Este contenido solo muestra cómo se vería la victoria. No es aleatorio en HTML puro.</div>
-</div>
+        const skull = {
+            x: canvas.width / 2,
+            y: 150,
+            size: 80,
+            vx: 3,
+            vy: 2,
+            attackCooldown: 0,
+            jawAngle: 0,
+            jawSpeed: 0.1,
+            eyeScale: 1,
+            rotation: 0
+        };
 
-<footer>© 2025 - Juego 1 en 1,000,000 — Versión HTML sola</footer>
+        const player = {
+            x: canvas.width / 2,
+            y: canvas.height - 100,
+            size: 15
+        };
 
-  </div>
+        const bullets = [];
+        const skullBullets = [];
+
+        function drawSkull(x, y, size) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(skull.rotation);
+            
+            // Cráneo principal
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(0, 0, size, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Ojos animados
+            ctx.fillStyle = '#000';
+            const eyeSize = size * 0.2 * skull.eyeScale;
+            ctx.beginPath();
+            ctx.arc(-size * 0.3, -size * 0.1, eyeSize, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(size * 0.3, -size * 0.1, eyeSize, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Brillo en los ojos
+            ctx.fillStyle = '#f00';
+            ctx.beginPath();
+            ctx.arc(-size * 0.3, -size * 0.1, eyeSize * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(size * 0.3, -size * 0.1, eyeSize * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Nariz
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.moveTo(0, size * 0.1);
+            ctx.lineTo(-size * 0.15, size * 0.3);
+            ctx.lineTo(size * 0.15, size * 0.3);
+            ctx.closePath();
+            ctx.fill();
+
+            // Mandíbula superior (fija)
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(-size * 0.6, size * 0.4, size * 1.2, size * 0.2);
+
+            // Dientes superiores
+            ctx.fillStyle = '#000';
+            for (let i = -3; i <= 3; i++) {
+                ctx.fillRect(i * size * 0.15 - size * 0.06, size * 0.4, size * 0.12, size * 0.2);
+            }
+
+            // Mandíbula inferior (móvil)
+            ctx.save();
+            ctx.translate(0, size * 0.5);
+            ctx.rotate(skull.jawAngle);
+            
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(-size * 0.5, 0, size, size * 0.3);
+
+            // Dientes inferiores
+            ctx.fillStyle = '#000';
+            for (let i = -2; i <= 2; i++) {
+                ctx.fillRect(i * size * 0.18 - size * 0.06, 0, size * 0.12, size * 0.15);
+            }
+            
+            ctx.restore();
+            ctx.restore();
+        }
+
+        function drawPlayer(x, y, size) {
+            ctx.fillStyle = '#0f0';
+            ctx.beginPath();
+            ctx.moveTo(x, y - size);
+            ctx.lineTo(x - size, y + size);
+            ctx.lineTo(x + size, y + size);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function drawBullet(x, y, color) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(x, y, 5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function updateSkull() {
+            skull.x += skull.vx;
+            skull.y += skull.vy;
+
+            if (skull.x < skull.size || skull.x > canvas.width - skull.size) {
+                skull.vx *= -1;
+            }
+            if (skull.y < skull.size || skull.y > canvas.height / 2) {
+                skull.vy *= -1;
+            }
+
+            // Animaciones
+            skull.jawAngle = Math.sin(Date.now() * 0.005) * 0.3;
+            skull.eyeScale = 1 + Math.sin(Date.now() * 0.01) * 0.2;
+            skull.rotation = Math.sin(Date.now() * 0.002) * 0.1;
+
+            skull.attackCooldown--;
+            if (skull.attackCooldown <= 0) {
+                const angle = Math.atan2(player.y - skull.y, player.x - skull.x);
+                skullBullets.push({
+                    x: skull.x,
+                    y: skull.y,
+                    vx: Math.cos(angle) * 5,
+                    vy: Math.sin(angle) * 5
+                });
+                skull.attackCooldown = 60;
+            }
+        }
+
+        function updateBullets() {
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                bullets[i].y -= 8;
+                
+                const dist = Math.hypot(bullets[i].x - skull.x, bullets[i].y - skull.y);
+                if (dist < skull.size) {
+                    skullHP -= 10;
+                    score += 10;
+                    bullets.splice(i, 1);
+                    if (skullHP <= 0) {
+                        endGame(true);
+                    }
+                } else if (bullets[i].y < 0) {
+                    bullets.splice(i, 1);
+                }
+            }
+
+            for (let i = skullBullets.length - 1; i >= 0; i--) {
+                skullBullets[i].x += skullBullets[i].vx;
+                skullBullets[i].y += skullBullets[i].vy;
+                
+                const dist = Math.hypot(skullBullets[i].x - player.x, skullBullets[i].y - player.y);
+                if (dist < player.size) {
+                    playerHP -= 15;
+                    skullBullets.splice(i, 1);
+                    if (playerHP <= 0) {
+                        endGame(false);
+                    }
+                } else if (skullBullets[i].y > canvas.height) {
+                    skullBullets.splice(i, 1);
+                }
+            }
+        }
+
+        function endGame(won) {
+            gameActive = false;
+            document.getElementById('gameOver').style.display = 'block';
+            document.getElementById('gameOverText').textContent = won ? '¡GANASTE!' : 'GAME OVER';
+        }
+
+        function resetGame() {
+            playerHP = 100;
+            skullHP = 150;
+            score = 0;
+            gameActive = true;
+            skull.x = canvas.width / 2;
+            skull.y = 150;
+            skull.vx = 3;
+            skull.vy = 2;
+            bullets.length = 0;
+            skullBullets.length = 0;
+            document.getElementById('gameOver').style.display = 'none';
+            gameLoop();
+        }
+
+        function gameLoop() {
+            if (!gameActive) return;
+
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            updateSkull();
+            updateBullets();
+
+            drawSkull(skull.x, skull.y, skull.size);
+            drawPlayer(player.x, player.y, player.size);
+
+            bullets.forEach(b => drawBullet(b.x, b.y, '#0f0'));
+            skullBullets.forEach(b => drawBullet(b.x, b.y, '#f00'));
+
+            document.getElementById('playerHP').textContent = Math.max(0, playerHP);
+            document.getElementById('skullHP').textContent = Math.max(0, skullHP);
+            document.getElementById('score').textContent = score;
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        canvas.addEventListener('mousemove', (e) => {
+            player.x = e.clientX;
+            player.y = e.clientY;
+        });
+
+        canvas.addEventListener('click', (e) => {
+            if (gameActive) {
+                bullets.push({ x: player.x, y: player.y });
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        gameLoop();
+    </script>
 </body>
 </html>
